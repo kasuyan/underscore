@@ -6,7 +6,19 @@
 // Baseline setup
 // --------------
 
-//
+// Establish the root object, `window` (`self`) in the browser, `global`
+// on the server, or `this` in some virtual machines. We use `self`
+// instead of `window` for `WebWorker` support.
+// selfはwindowObject
+// self.selfはWidowobjectまたはwebWorkersObject
+// globalはnodejsのグローバルオブジェクト
+/**
+ * selfがオブジェクトかつself.selfがウインドウオブジェクトかつウインドウオブジェクトそのものがあるか
+ * グローバルオブジェクトがobjectでglobal.globalがグローバルオブジェクトかつ、グローバルそのものがあるか、
+ * ルートで関数を生成しそれを即実行して帰ってきたものがあるか
+ * なにもなければ空のオブジェクト
+ * をrootに代入する
+ */
 var root =
   (typeof self == "object" && self.self === self && self) ||
   (typeof global == "object" && global.global === global && global) ||
@@ -14,11 +26,19 @@ var root =
   {};
 
 // Save bytes in the minified (but not gzipped) version:
+/**
+ * ArrayProtoにArrayのプロトタイプを代入
+ * ObjProtoにobjectのプロトタイプを代入
+ * SymbolProtoにSymbolがundefindeでなければSymbolのプロトタイプを代入し、なければnullを入れる
+ */
 var ArrayProto = Array.prototype,
   ObjProto = Object.prototype;
 var SymbolProto = typeof Symbol !== "undefined" ? Symbol.prototype : null;
 
 // Create quick reference variables for speed access to core prototypes.
+/**
+ * 各メソッドを変数に入れて簡単にアクセスできるようにした。
+ */
 var push = ArrayProto.push,
   slice = ArrayProto.slice,
   toString = ObjProto.toString,
@@ -26,22 +46,44 @@ var push = ArrayProto.push,
 
 // All **ECMAScript 5** native function implementations that we hope to use
 // are declared here.
+/**
+ * isArrayをnativeIsArrayとして宣言
+ * isArrayは引数にいれた値が配列かを宣言する
+ * nativeKeysはオブジェクトのキーを配列で返す
+ * natvieCreateは既存のオブジェクトを生成する
+ */
 var nativeIsArray = Array.isArray,
   nativeKeys = Object.keys,
   nativeCreate = Object.create;
 
 // Create references to these builtin functions because we override them.
+/**
+ *　isNaNを_isNaNに代入。isNaNは引数のNaNチェックをする
+ * isFiniteも_isFiniteに代入。有限数かどうかをチェックする。
+ */
 var _isNaN = root.isNaN,
   _isFinite = root.isFinite;
 
 // Naked function reference for surrogate-prototype-swapping.
+/**
+ * 空の関数を作る。
+ * あとでプロトタイプのインスタンスの生成に使うらしい
+ */
 var Ctor = function () {};
 
 // The Underscore object. All exported functions below are added to it in the
 // modules/index-all.js using the mixin function.
+/**
+ * エクスポートしてモジュール化します。デフォルトなのでまとめて１つです。
+ * アンダーバーとしてエクスポートしてます。引数はオブジェクトです。
+ * 引数が_だったらアンダースコアーオブジェクトなのでそれを返します。
+ * 引数がアンダースコアオブジェクトではない場合は_にラップして返します。
+ *
+ */
 export default function _(obj) {
   if (obj instanceof _) return obj;
   if (!(this instanceof _)) return new _(obj);
+  //　FIXME
   this._wrapped = obj;
 }
 
@@ -52,23 +94,33 @@ export var VERSION = (_.VERSION = "1.10.2");
 // of the passed-in callback, to be repeatedly applied in other Underscore
 // functions.
 function optimizeCb(func, context, argCount) {
+  // contextの戻り値がundefindならばそのまま関数を返す
   if (context === void 0) return func;
+  // 引数カウントがnullなら3それ以外はそのまま使う
   switch (argCount == null ? 3 : argCount) {
+    // 1つの場合
     case 1:
+      // 関数を返すvalueを引数にする
       return function (value) {
+        // 渡された関数をcontextで実行してvalueを渡す
         return func.call(context, value);
       };
     // The 2-argument case is omitted because we’re not using it.
     case 3:
+      // 値、インデックス、コレクションを引数にもつ関数
       return function (value, index, collection) {
+        // 渡された関数をcontextで実行してvalueを渡す
         return func.call(context, value, index, collection);
       };
     case 4:
+      // acc, 値、インデックス、コレクションを引数にもつ関数
       return function (accumulator, value, index, collection) {
         return func.call(context, accumulator, value, index, collection);
       };
   }
+  // contextはundifinedじゃない場合
   return function () {
+    // argumentsをまとめて受け取る関数を返す
     return func.apply(context, arguments);
   };
 }
@@ -77,6 +129,7 @@ function optimizeCb(func, context, argCount) {
 // element in a collection, returning the desired result — either `identity`,
 // an arbitrary callback, a property matcher, or a property accessor.
 function baseIteratee(value, context, argCount) {
+  // FIXME identityはなに？
   if (value == null) return identity;
   if (isFunction(value)) return optimizeCb(value, context, argCount);
   if (isObject(value) && !isArray(value)) return matcher(value);
@@ -146,6 +199,7 @@ function shallowProperty(key) {
 }
 
 function _has(obj, path) {
+  // objectのhasWonPropertyを渡されたオブジェクトで実行
   return obj != null && hasOwnProperty.call(obj, path);
 }
 
